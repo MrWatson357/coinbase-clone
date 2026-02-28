@@ -1,42 +1,41 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-function App() {
-  const [count, setCount] = useState(0);
+import Navbar from "./components/layout/Navbar";
+import Footer from "./components/layout/Footer";
 
+import Home from "./pages/Home";
+import Explore from "./pages/Explore";
+import AssetDetail from "./pages/AssetDetail";
+import Learn from "./pages/Learn";
+import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
+
+export default function App() {
   return (
-    <div className="max-w-5xl mx-auto p-8 text-center">
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img
-            src={viteLogo}
-            className="h-24 p-6 transition-[filter] duration-300 hover:drop-shadow-[0_0_2em_#646cffaa]"
-            alt="Vite logo"
-          />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img
-            src={reactLogo}
-            className="h-24 p-6 transition-[filter] duration-300 hover:drop-shadow-[0_0_2em_#61dafbaa] motion-safe:animate-spin-slow"
-            alt="React logo"
-          />
-        </a>
+    <BrowserRouter>
+      {/* Layout wrapper */}
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+
+        {/* Page Content */}
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+
+            {/* Dynamic route for an asset */}
+            <Route path="/asset/:id" element={<AssetDetail />} />
+
+            {/* Optional: 404 */}
+            <Route path="*" element={<div className="p-6">Page not found</div>} />
+          </Routes>
+        </main>
+
+        <Footer />
       </div>
-      <h1>Vite + React</h1>
-      <div className="p-8">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="text-gray-500">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
+    </BrowserRouter>
   );
 }
-
-export default App;
