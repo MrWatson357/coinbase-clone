@@ -18,6 +18,7 @@ const CoinbaseLogo = () => (
 );
 
 const navLinks = [
+  { label: "Home",    to: "/"        },
   { label: "Explore", to: "/explore" },
   { label: "Learn", to: "/learn" },
 ];
