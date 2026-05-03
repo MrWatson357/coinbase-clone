@@ -9,31 +9,25 @@ import AssetDetail from "./pages/AssetDetail";
 import Learn from "./pages/Learn";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
+import Profile from "./pages/Profile";
 
 export default function App() {
   return (
     <BrowserRouter>
-      {/* Layout wrapper */}
       <div className="min-h-screen flex flex-col">
         <Navbar />
-
-        {/* Page Content */}
         <main className="flex-1">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/"        element={<Home />} />
             <Route path="/explore" element={<Explore />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-
-            {/* Dynamic route for an asset */}
+            <Route path="/learn"   element={<Learn />} />
+            <Route path="/signin"  element={<SignIn />} />
+            <Route path="/signup"  element={<SignUp />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/asset/:id" element={<AssetDetail />} />
-
-            {/* Optional: 404 */}
-            <Route path="*" element={<div className="p-6">Page not found</div>} />
+            <Route path="*" element={<div className="p-6 text-center text-gray-500">Page not found</div>} />
           </Routes>
         </main>
-
         <Footer />
       </div>
     </BrowserRouter>
