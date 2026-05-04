@@ -10,6 +10,7 @@ import Learn from "./pages/Learn";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Profile from "./pages/Profile";
+import AddCrypto from "./pages/AddCrypto";
 
 export default function App() {
   return (
@@ -18,13 +19,14 @@ export default function App() {
         <Navbar />
         <main className="flex-1">
           <Routes>
-            <Route path="/"        element={<Home />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/learn"   element={<Learn />} />
-            <Route path="/signin"  element={<SignIn />} />
-            <Route path="/signup"  element={<SignUp />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/asset/:id" element={<AssetDetail />} />
+            <Route path="/"            element={<Home />} />
+            <Route path="/explore"     element={<Explore />} />
+            <Route path="/learn"       element={<Learn />} />
+            <Route path="/signin"      element={<SignIn />} />
+            <Route path="/signup"      element={<SignUp />} />
+            <Route path="/profile"     element={<Profile />} />
+            <Route path="/add-crypto"  element={<AddCrypto />} />
+            <Route path="/asset/:id"   element={<AssetDetail />} />
             <Route path="*" element={<div className="p-6 text-center text-gray-500">Page not found</div>} />
           </Routes>
         </main>
