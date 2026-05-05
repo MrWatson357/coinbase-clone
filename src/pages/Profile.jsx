@@ -65,13 +65,6 @@ export default function Profile() {
               <p style={{ fontSize:"14px", color:"#6b7280", margin:0 }}>{user.email}</p>
             </div>
           </div>
-
-          <button onClick={handleLogout}
-            style={{ padding:"10px 24px", borderRadius:"999px", border:"1.5px solid #e5e7eb", background:"white", fontSize:"13px", fontWeight:700, color:"#374151", cursor:"pointer", transition:"all 0.2s" }}
-            onMouseEnter={e => { e.currentTarget.style.background="#f9fafb"; e.currentTarget.style.borderColor="#dc2626"; e.currentTarget.style.color="#dc2626"; }}
-            onMouseLeave={e => { e.currentTarget.style.background="white"; e.currentTarget.style.borderColor="#e5e7eb"; e.currentTarget.style.color="#374151"; }}>
-            Sign out
-          </button>
         </div>
       </div>
 
