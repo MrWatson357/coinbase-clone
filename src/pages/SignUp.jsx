@@ -32,7 +32,7 @@ export default function SignUp() {
     setError("");
     try {
       await registerUser(formData);
-      navigate("/profile");
+      window.location.href = "/";
     } catch (err) {
       setError(err.message);
     } finally {

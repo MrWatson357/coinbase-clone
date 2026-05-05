@@ -24,14 +24,9 @@ export default function Profile() {
   }, [navigate]);
 
   const handleLogout = async () => {
-    try {
-      await logoutUser();
-      navigate("/");
-    } catch {
-      navigate("/");
-    }
-  };
-
+  try { await logoutUser(); } catch {}
+  window.location.href = "/";
+};
   const getInitials = (name) =>
     name ? name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "?";
 

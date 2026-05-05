@@ -28,7 +28,8 @@ export default function SignIn() {
     setError("");
     try {
       await loginUser(formData);
-      navigate("/"); // ← redirect to homepage after login
+      window.location.href = "/";
+ // ← redirect to homepage after login
     } catch (err) {
       setError(err.message);
     } finally {
