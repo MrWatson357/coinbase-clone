@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getProfile, logoutUser } from "../services/api";
+import { getProfile, logoutUser } from "../../services/api";
 
 const CoinbaseLogo = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
