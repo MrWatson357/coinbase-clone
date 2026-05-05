@@ -301,9 +301,14 @@ export default function Navbar() {
         <Link to="/" style={{ display:"flex", alignItems:"center", gap:"10px", textDecoration:"none", flexShrink:0 }}>
           <CoinbaseLogo/>
         </Link>
-
         {/* Desktop nav */}
         <nav style={{ display:"flex", alignItems:"center", gap:"0", position:"relative" }} className="hidden md:flex">
+          <Link to="/"
+          style={{ padding:"8px 14px", fontSize:"14px", fontWeight:500, color:"#111827", textDecoration:"none", borderRadius:"8px", whiteSpace:"nowrap" }}
+          onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
+          onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+          Home
+        </Link>
           <Link to="/explore"
             style={{ padding:"8px 14px", fontSize:"14px", fontWeight:500, color:"#111827", textDecoration:"none", borderRadius:"8px", whiteSpace:"nowrap" }}
             onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
