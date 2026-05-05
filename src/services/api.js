@@ -1,10 +1,9 @@
-// Central API service — all backend calls go through here
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { "Content-Type": "application/json", ...options.headers },
-    credentials: "include", // sends HTTP-only cookie automatically
+    credentials: "include",
     ...options,
   });
 
@@ -17,20 +16,20 @@ async function request(path, options = {}) {
   return data;
 }
 
-// ── Auth ──
 export const registerUser = (body) =>
   request("/auth/register", { method: "POST", body: JSON.stringify(body) });
 
 export const loginUser = (body) =>
   request("/auth/login", { method: "POST", body: JSON.stringify(body) });
 
-export const logoutUser = () =>
-  request("/auth/logout", { method: "POST" });
+export const logoutUser = () => {
+  document.cookie = "token=; Max-Age=0; path=/;";
+  document.cookie = "token=; Max-Age=0; path=/; domain=" + window.location.hostname;
+  return Promise.resolve();
+};
 
-// ── User ──
 export const getProfile = () => request("/user/profile");
 
-// ── Crypto ──
 export const getAllCryptos = () => request("/crypto");
 export const getGainers    = () => request("/crypto/gainers");
 export const getNewListings = () => request("/crypto/new");
