@@ -28,7 +28,7 @@ export default function SignIn() {
     setError("");
     try {
       await loginUser(formData);
-      navigate("/profile");
+      navigate("/"); // ← redirect to homepage after login
     } catch (err) {
       setError(err.message);
     } finally {
@@ -40,7 +40,6 @@ export default function SignIn() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-4">
       <div className="relative w-full max-w-md bg-white/90 backdrop-blur-sm rounded-3xl border border-gray-200 shadow-sm p-8 overflow-hidden">
 
-        {/* Watermark */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <CoinbaseLogo/>
         </div>
@@ -53,7 +52,6 @@ export default function SignIn() {
             Access your crypto portfolio securely.
           </p>
 
-          {/* Error message */}
           {error && (
             <div className="mb-4 px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-600 font-medium">
               {error}

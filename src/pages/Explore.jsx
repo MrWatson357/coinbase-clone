@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { cryptos } from "../data/cryptos";
+import { getAllCryptos, getGainers, getNewListings } from "../services/api";
 
 const SearchIcon = () => (
   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -54,15 +54,14 @@ function CoinRow({ coin, index }) {
   const accent = getAccent(coin.symbol);
   const spark = up ? "M0 16 C10 12,22 8,32 5 S50 1,64 0" : "M0 0 C10 4,22 8,32 11 S50 15,64 16";
   const sc = up ? "#059669" : "#dc2626";
+  const id = coin._id || coin.id;
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"32px 2fr 1.2fr 100px 90px 1fr 1fr 100px", alignItems:"center", padding:"14px 20px", borderBottom:"1px solid #f3f4f6", transition:"background 0.15s" }}
       onMouseEnter={e => e.currentTarget.style.background="#fafafa"}
       onMouseLeave={e => e.currentTarget.style.background="transparent"}>
-      {/* Rank */}
       <span style={{ fontSize:"13px", color:"#9ca3af", fontWeight:500 }}>{index + 1}</span>
-      {/* Asset */}
-      <Link to={`/asset/${coin.id}`} style={{ display:"flex", alignItems:"center", gap:"12px", textDecoration:"none" }}>
+      <Link to={`/asset/${id}`} style={{ display:"flex", alignItems:"center", gap:"12px", textDecoration:"none" }}>
         <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:accent, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"11px", fontWeight:900, color:"white", flexShrink:0 }}>
           {coin.symbol.slice(0,2)}
         </div>
@@ -71,27 +70,21 @@ function CoinRow({ coin, index }) {
           <p style={{ fontSize:"12px", color:"#9ca3af", margin:0 }}>{coin.symbol}</p>
         </div>
       </Link>
-      {/* Price */}
       <p style={{ fontSize:"14px", fontWeight:600, color:"#111827", margin:0, textAlign:"right" }}>
         ${coin.price.toLocaleString(undefined,{maximumFractionDigits:2})}
       </p>
-      {/* Chart */}
       <div style={{ display:"flex", justifyContent:"center" }}>
         <svg viewBox="0 0 64 18" width="72" height="28" fill="none">
           <path d={spark} stroke={sc} strokeWidth="1.6" strokeLinecap="round"/>
         </svg>
       </div>
-      {/* Change */}
       <p style={{ fontSize:"13px", fontWeight:700, color: up?"#059669":"#dc2626", margin:0, textAlign:"right" }}>
         {up?"+":""}{coin.change}%
       </p>
-      {/* Mkt cap */}
-      <p style={{ fontSize:"13px", color:"#6b7280", margin:0, textAlign:"right" }}>{coin.marketCap}</p>
-      {/* Volume */}
+      <p style={{ fontSize:"13px", color:"#6b7280", margin:0, textAlign:"right" }}>{coin.marketCap || "—"}</p>
       <p style={{ fontSize:"13px", color:"#6b7280", margin:0, textAlign:"right" }}>{coin.volume || "—"}</p>
-      {/* Action */}
       <div style={{ display:"flex", justifyContent:"flex-end" }}>
-        <Link to={`/asset/${coin.id}`}
+        <Link to={`/asset/${id}`}
           style={{ padding:"7px 20px", borderRadius:"999px", background:"#0052FF", color:"white", fontSize:"13px", fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}
           onMouseEnter={e => e.currentTarget.style.background="#003ed4"}
           onMouseLeave={e => e.currentTarget.style.background="#0052FF"}>
@@ -122,20 +115,47 @@ function MoverCard({ coin }) {
 const TABS = ["All assets","Gainers","Losers","Trending"];
 
 export default function Explore() {
-  const [search,  setSearch]  = useState("");
-  const [tab,     setTab]     = useState("All assets");
-  const [sortBy,  setSortBy]  = useState("rank");
-  const [sortDir, setSortDir] = useState("asc");
+  const [allCryptos,  setAllCryptos]  = useState([]);
+  const [gainers,     setGainers]     = useState([]);
+  const [newCoins,    setNewCoins]    = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [search,      setSearch]      = useState("");
+  const [tab,         setTab]         = useState("All assets");
+  const [sortBy,      setSortBy]      = useState("rank");
+  const [sortDir,     setSortDir]     = useState("asc");
+
+  // ── Fetch from backend on mount ──
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [allRes, gainersRes, newRes] = await Promise.all([
+          getAllCryptos(),
+          getGainers(),
+          getNewListings(),
+        ]);
+        setAllCryptos(allRes.data || []);
+        setGainers(gainersRes.data || []);
+        setNewCoins(newRes.data || []);
+      } catch (err) {
+        console.error("Failed to fetch crypto data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filtered = useMemo(() => {
-    let data = [...cryptos];
-    if (tab === "Gainers")  data = data.filter(c => c.change > 0).sort((a,b) => b.change - a.change);
-    if (tab === "Losers")   data = data.filter(c => c.change < 0).sort((a,b) => a.change - b.change);
-    if (tab === "Trending") data = [...data].sort((a,b) => b.volume - a.volume);
+    let data = tab === "Gainers" ? [...gainers]
+             : tab === "Losers"  ? [...allCryptos].filter(c => c.change < 0).sort((a,b) => a.change - b.change)
+             : tab === "Trending"? [...allCryptos].sort((a,b) => (b.volume||0) - (a.volume||0))
+             : [...allCryptos];
+
     if (search) data = data.filter(c =>
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.symbol.toLowerCase().includes(search.toLowerCase())
     );
+
     if (tab === "All assets") {
       data.sort((a,b) => {
         let vA = a[sortBy], vB = b[sortBy];
@@ -145,7 +165,7 @@ export default function Explore() {
       });
     }
     return data;
-  }, [tab, search, sortBy, sortDir]);
+  }, [tab, search, sortBy, sortDir, allCryptos, gainers]);
 
   const handleSort = (col) => {
     if (sortBy === col) setSortDir(d => d==="asc"?"desc":"asc");
@@ -158,8 +178,7 @@ export default function Explore() {
     </span>
   );
 
-  const topMovers = [...cryptos].sort((a,b) => Math.abs(b.change) - Math.abs(a.change)).slice(0,4);
-  const newCoins  = cryptos.slice(-4);
+  const topMovers = [...allCryptos].sort((a,b) => Math.abs(b.change) - Math.abs(a.change)).slice(0,4);
   const totalMktCap = "$24.41T";
 
   return (
@@ -179,15 +198,24 @@ export default function Explore() {
                 <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#059669", display:"inline-block" }}/>
               </p>
             </div>
-            {/* Search */}
-            <div style={{ position:"relative", width:"320px" }}>
-              <span style={{ position:"absolute", left:"14px", top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }}><SearchIcon/></span>
-              <input type="text" placeholder="Search for an asset" value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{ width:"100%", padding:"12px 16px 12px 40px", borderRadius:"999px", border:"1.5px solid #e5e7eb", background:"#f9fafb", fontSize:"14px", color:"#111827", outline:"none", boxSizing:"border-box" }}
-                onFocus={e => { e.target.style.borderColor="#0052FF"; e.target.style.background="white"; }}
-                onBlur={e => { e.target.style.borderColor="#e5e7eb"; e.target.style.background="#f9fafb"; }}
-              />
+            {/* Search + Add button */}
+            <div style={{ display:"flex", gap:"12px", alignItems:"center" }}>
+              <div style={{ position:"relative", width:"280px" }}>
+                <span style={{ position:"absolute", left:"14px", top:"50%", transform:"translateY(-50%)", color:"#9ca3af" }}><SearchIcon/></span>
+                <input type="text" placeholder="Search for an asset" value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  style={{ width:"100%", padding:"12px 16px 12px 40px", borderRadius:"999px", border:"1.5px solid #e5e7eb", background:"#f9fafb", fontSize:"14px", color:"#111827", outline:"none", boxSizing:"border-box" }}
+                  onFocus={e => { e.target.style.borderColor="#0052FF"; e.target.style.background="white"; }}
+                  onBlur={e => { e.target.style.borderColor="#e5e7eb"; e.target.style.background="#f9fafb"; }}
+                />
+              </div>
+              {/* ── ADD CRYPTO BUTTON ── */}
+              <Link to="/add-crypto"
+                style={{ padding:"12px 20px", borderRadius:"999px", background:"#0052FF", color:"white", fontSize:"13px", fontWeight:700, textDecoration:"none", whiteSpace:"nowrap", display:"flex", alignItems:"center", gap:"6px" }}
+                onMouseEnter={e => e.currentTarget.style.background="#003ed4"}
+                onMouseLeave={e => e.currentTarget.style.background="#0052FF"}>
+                + Add Crypto
+              </Link>
             </div>
           </div>
         </div>
@@ -200,38 +228,34 @@ export default function Explore() {
 
           {/* Market stats */}
           <div style={{ marginBottom:"40px" }}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"12px" }}>
-              <h2 style={{ fontSize:"20px", fontWeight:800, color:"#111827", margin:0 }}>Market stats</h2>
-            </div>
+            <h2 style={{ fontSize:"20px", fontWeight:800, color:"#111827", margin:"0 0 12px" }}>Market stats</h2>
             <p style={{ fontSize:"13px", color:"#6b7280", marginBottom:"16px" }}>
               The overall crypto market is growing this week. Total market cap: <span style={{ fontWeight:600, color:"#111827" }}>{totalMktCap}</span>, up 2.29% from last week.
             </p>
             <div style={{ display:"flex", gap:"12px", flexWrap:"wrap" }}>
-              <StatCard label="Total market cap"  value="$24.41T"  change="0.83%"  up={true}  id="mc"/>
-              <StatCard label="Trade volume"       value="$1.80T"   change="54.88%" up={true}  id="tv"/>
-              <StatCard label="Buy-sell ratio"     value="0.76"     change="0.07%"  up={true}  id="bs"/>
-              <StatCard label="BTC dominance"      value="60.14%"   change="0.07%"  up={false} id="btc"/>
+              <StatCard label="Total market cap" value="$24.41T" change="0.83%"  up={true}  id="mc"/>
+              <StatCard label="Trade volume"      value="$1.80T"  change="54.88%" up={true}  id="tv"/>
+              <StatCard label="Buy-sell ratio"    value="0.76"    change="0.07%"  up={true}  id="bs"/>
+              <StatCard label="BTC dominance"     value="60.14%"  change="0.07%"  up={false} id="btc"/>
             </div>
           </div>
 
           {/* Crypto market prices */}
           <div>
             <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"8px", flexWrap:"wrap" }}>
-              <h2 style={{ fontSize:"20px", fontWeight:800, color:"#111827", margin:0 }}>
-                Crypto market prices
-              </h2>
-              <span style={{ fontSize:"13px", color:"#9ca3af", fontWeight:500 }}>{cryptos.length} assets</span>
+              <h2 style={{ fontSize:"20px", fontWeight:800, color:"#111827", margin:0 }}>Crypto market prices</h2>
+              <span style={{ fontSize:"13px", color:"#9ca3af", fontWeight:500 }}>{allCryptos.length} assets</span>
             </div>
             <p style={{ fontSize:"13px", color:"#6b7280", marginBottom:"20px" }}>
               The overall crypto market is growing this week. Total market cap: {totalMktCap}, up 2.29%.
             </p>
 
-            {/* Tabs + filters */}
+            {/* Tabs */}
             <div style={{ display:"flex", alignItems:"center", gap:"8px", marginBottom:"20px", flexWrap:"wrap" }}>
               <div style={{ display:"flex", background:"#f3f4f6", borderRadius:"999px", padding:"4px", gap:"2px" }}>
                 {TABS.map(t => (
                   <button key={t} onClick={() => setTab(t)}
-                    style={{ padding:"6px 16px", borderRadius:"999px", fontSize:"13px", fontWeight:600, border:"none", cursor:"pointer", background: tab===t?"white":"transparent", color: tab===t?"#111827":"#6b7280", boxShadow: tab===t?"0 1px 4px rgba(0,0,0,0.08)":""  }}>
+                    style={{ padding:"6px 16px", borderRadius:"999px", fontSize:"13px", fontWeight:600, border:"none", cursor:"pointer", background: tab===t?"white":"transparent", color: tab===t?"#111827":"#6b7280", boxShadow: tab===t?"0 1px 4px rgba(0,0,0,0.08)":"" }}>
                     {t}
                   </button>
                 ))}
@@ -241,17 +265,16 @@ export default function Explore() {
 
             {/* Table */}
             <div style={{ border:"1px solid #e5e7eb", borderRadius:"16px", overflow:"hidden" }}>
-              {/* Header */}
               <div style={{ display:"grid", gridTemplateColumns:"32px 2fr 1.2fr 100px 90px 1fr 1fr 100px", padding:"12px 20px", background:"#f9fafb", borderBottom:"1px solid #e5e7eb" }}>
                 {[
-                  { label:"",          col:null,        align:"left"  },
-                  { label:"Asset",     col:"rank",      align:"left"  },
-                  { label:"Price",     col:"price",     align:"right" },
-                  { label:"Chart",     col:null,        align:"center"},
-                  { label:"Change",    col:"change",    align:"right" },
-                  { label:"Mkt cap",   col:"marketCap", align:"right" },
-                  { label:"Volume",    col:"volume",    align:"right" },
-                  { label:"Actions",   col:null,        align:"right" },
+                  { label:"",       col:null,        align:"left"   },
+                  { label:"Asset",  col:"rank",      align:"left"   },
+                  { label:"Price",  col:"price",     align:"right"  },
+                  { label:"Chart",  col:null,        align:"center" },
+                  { label:"Change", col:"change",    align:"right"  },
+                  { label:"Mkt cap",col:"marketCap", align:"right"  },
+                  { label:"Volume", col:"volume",    align:"right"  },
+                  { label:"Actions",col:null,        align:"right"  },
                 ].map((h,i) => (
                   <div key={i} style={{ fontSize:"12px", fontWeight:700, color:"#9ca3af", textAlign:h.align, cursor: h.col?"pointer":"default", userSelect:"none", textTransform:"uppercase", letterSpacing:"0.05em" }}
                     onClick={h.col ? () => handleSort(h.col) : undefined}>
@@ -260,9 +283,14 @@ export default function Explore() {
                 ))}
               </div>
 
-              {/* Rows */}
-              {filtered.length > 0
-                ? filtered.map((coin, i) => <CoinRow key={coin.id} coin={coin} index={i}/>)
+              {loading ? (
+                <div style={{ padding:"60px", textAlign:"center" }}>
+                  <div style={{ width:"36px", height:"36px", borderRadius:"50%", border:"3px solid #e5e7eb", borderTopColor:"#0052FF", margin:"0 auto 12px", animation:"spin 0.8s linear infinite" }}/>
+                  <p style={{ fontSize:"14px", color:"#9ca3af" }}>Loading cryptocurrencies...</p>
+                  <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                </div>
+              ) : filtered.length > 0
+                ? filtered.map((coin, i) => <CoinRow key={coin._id || coin.id} coin={coin} index={i}/>)
                 : (
                   <div style={{ padding:"60px", textAlign:"center" }}>
                     <p style={{ fontSize:"32px", margin:"0 0 12px" }}>🔍</p>
@@ -299,7 +327,7 @@ export default function Explore() {
               <span style={{ fontSize:"12px", color:"#9ca3af" }}>24hr change</span>
             </div>
             <div style={{ display:"flex", gap:"10px", overflowX:"auto", paddingBottom:"4px" }}>
-              {topMovers.map(c => <MoverCard key={c.id} coin={c}/>)}
+              {topMovers.map(c => <MoverCard key={c._id || c.id} coin={c}/>)}
             </div>
           </div>
 
@@ -309,10 +337,10 @@ export default function Explore() {
               <h3 style={{ fontSize:"16px", fontWeight:800, color:"#111827", margin:0 }}>New on Coinbase</h3>
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
-              {newCoins.map((c,i) => {
+              {newCoins.map((c) => {
                 const accent = getAccent(c.symbol);
                 return (
-                  <Link key={c.id} to={`/asset/${c.id}`}
+                  <Link key={c._id || c.id} to={`/asset/${c._id || c.id}`}
                     style={{ display:"flex", alignItems:"center", gap:"12px", padding:"12px", borderRadius:"14px", border:"1px solid #e5e7eb", textDecoration:"none", transition:"background 0.15s" }}
                     onMouseEnter={e => e.currentTarget.style.background="#f9fafb"}
                     onMouseLeave={e => e.currentTarget.style.background="white"}>

@@ -29,6 +29,7 @@ export default function AddCrypto() {
         change: parseFloat(formData.change),
       });
       setSuccess(`${formData.name} (${formData.symbol.toUpperCase()}) added successfully!`);
+      setTimeout(() => navigate("/explore"), 1500);
       setFormData({ name: "", symbol: "", price: "", change: "", image: "" });
     } catch (err) {
       setError(err.message);

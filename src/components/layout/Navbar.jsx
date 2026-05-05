@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { getProfile, logoutUser } from "../services/api";
 
 const CoinbaseLogo = () => (
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
@@ -24,14 +25,12 @@ const ArrowIcon = () => (
   </svg>
 );
 
-/* ── Icon wrapper ── */
 const NavIcon = ({ children }) => (
   <div style={{ width:"36px", height:"36px", borderRadius:"50%", background:"#f3f4f6", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, color:"#374151" }}>
     {children}
   </div>
 );
 
-/* ── Menu item ── */
 const MenuItem = ({ icon, title, desc, to="#" }) => (
   <Link to={to} style={{ display:"flex", gap:"12px", alignItems:"flex-start", padding:"10px 12px", borderRadius:"10px", textDecoration:"none", transition:"background 0.15s" }}
     onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
@@ -44,7 +43,6 @@ const MenuItem = ({ icon, title, desc, to="#" }) => (
   </Link>
 );
 
-/* ── Featured card (right column) ── */
 const FeaturedCard = ({ img, title, subtitle, cta, ctaTo="#" }) => (
   <div style={{ display:"flex", gap:"16px", alignItems:"flex-start" }}>
     <div style={{ width:"96px", height:"96px", borderRadius:"16px", background:"linear-gradient(135deg,#0052FF,#003BB3)", flexShrink:0, overflow:"hidden", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -58,7 +56,6 @@ const FeaturedCard = ({ img, title, subtitle, cta, ctaTo="#" }) => (
   </div>
 );
 
-/* ── SVG icons for menu items ── */
 const I = {
   buy: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>,
   base: <svg width="16" height="16" viewBox="0 0 24 24" fill="#0052FF"><circle cx="12" cy="12" r="10"/><path d="M12 6C8.686 6 6 8.686 6 12s2.686 6 6 6 6-2.686 6-6-2.686-6-6-6zm0 9a3 3 0 110-6 3 3 0 010 6z" fill="white"/></svg>,
@@ -96,7 +93,6 @@ const I = {
   security: <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>,
 };
 
-/* ── Dropdown configs ── */
 const DROPDOWNS = {
   Individuals: {
     cols: [
@@ -209,30 +205,33 @@ const DROPDOWNS = {
       ctaTo: "/signup",
     },
   },
-  Cryptocurrencies: {
-    simple: true,
-    cols: [
-      [
-        { icon: I.buy,     title:"Buy & Sell Crypto",   desc:"Trade 200+ cryptocurrencies",   to:"/explore" },
-        { icon: I.advanced,title:"Spot Trading",        desc:"Advanced charts and order books",to:"/explore" },
-        { icon: I.earn,    title:"Staking & Rewards",   desc:"Earn yield on your holdings",   to:"/explore" },
-      ],
-      [
-        { icon: I.learn,   title:"Crypto Education",   desc:"Learn the basics and beyond",    to:"/learn"   },
-        { icon: I.exchange,title:"Price Tracker",      desc:"Live prices for all assets",     to:"/explore" },
-        { icon: I.stake,   title:"DeFi & Onchain",     desc:"Explore the onchain ecosystem",  to:"/"        },
-      ],
-    ],
-  },
 };
 
 const NAV_ITEMS = ["Individuals","Businesses","Institutions","Developers","Company"];
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const ref = useRef(null);
   const timerRef = useRef(null);
+
+  // Check if user is logged in on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await getProfile();
+        setUser(res.data);
+      } catch {
+        setUser(null);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -249,17 +248,23 @@ export default function Navbar() {
     timerRef.current = setTimeout(() => setOpen(null), 120);
   };
 
+  const handleLogout = async () => {
+    try { await logoutUser(); } catch {}
+    setUser(null);
+    navigate("/");
+  };
+
+  const getInitials = (name) =>
+    name ? name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "?";
+
   const renderDropdown = (key) => {
     const d = DROPDOWNS[key];
     if (!d) return null;
-
     return (
       <div
         style={{ position:"absolute", top:"calc(100% + 8px)", left:"50%", transform:"translateX(-50%)", background:"white", borderRadius:"16px", boxShadow:"0 8px 40px rgba(0,0,0,0.14)", border:"1px solid #e5e7eb", padding:"24px", minWidth:"680px", zIndex:100, display:"flex", gap:"32px" }}
         onMouseEnter={() => handleMouseEnter(key)}
         onMouseLeave={handleMouseLeave}>
-
-        {/* Columns */}
         <div style={{ display:"flex", gap:"8px", flex:1 }}>
           <div style={{ flex:1 }}>
             {d.sectionTitle1 && (
@@ -279,8 +284,6 @@ export default function Navbar() {
             {d.cols[1].map(item => <MenuItem key={item.title} {...item}/>)}
           </div>
         </div>
-
-        {/* Featured */}
         {d.featured && (
           <div style={{ width:"240px", flexShrink:0, borderLeft:"1px solid #f3f4f6", paddingLeft:"24px" }}>
             <FeaturedCard {...d.featured}/>
@@ -319,8 +322,7 @@ export default function Navbar() {
               onMouseLeave={handleMouseLeave}>
               <button
                 style={{ padding:"8px 14px", fontSize:"14px", fontWeight:500, color: open===item?"#0052FF":"#111827", background:"transparent", border:"none", cursor:"pointer", borderRadius:"8px", transition:"all 0.15s", display:"flex", alignItems:"center", gap:"4px", whiteSpace:"nowrap" }}
-                onMouseEnter={e => { e.currentTarget.style.background="#f3f4f6"; }
-                }
+                onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
                 onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                 {item}
                 <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" style={{ transition:"transform 0.2s", transform: open===item?"rotate(180deg)":"rotate(0deg)" }}>
@@ -344,18 +346,46 @@ export default function Navbar() {
             onMouseLeave={e => e.currentTarget.style.background="white"}>
             <GlobeIcon/>
           </button>
-          <Link to="/signin"
-            style={{ padding:"8px 20px", borderRadius:"999px", border:"1px solid #e5e7eb", background:"white", fontSize:"14px", fontWeight:600, color:"#111827", textDecoration:"none" }}
-            onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
-            onMouseLeave={e => e.currentTarget.style.background="white"}>
-            Sign in
-          </Link>
-          <Link to="/signup"
-            style={{ padding:"8px 20px", borderRadius:"999px", background:"#0052FF", fontSize:"14px", fontWeight:700, color:"white", textDecoration:"none" }}
-            onMouseEnter={e => e.currentTarget.style.background="#003ed4"}
-            onMouseLeave={e => e.currentTarget.style.background="#0052FF"}>
-            Sign up
-          </Link>
+
+          {/* ── AUTH BUTTONS — smart show/hide ── */}
+          {authChecked && (
+            user ? (
+              // Logged in — show avatar + Profile link + Sign out
+              <>
+                <Link to="/profile"
+                  style={{ display:"flex", alignItems:"center", gap:"8px", padding:"6px 14px", borderRadius:"999px", border:"1px solid #e5e7eb", textDecoration:"none", background:"white", transition:"background 0.15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
+                  onMouseLeave={e => e.currentTarget.style.background="white"}>
+                  <div style={{ width:"26px", height:"26px", borderRadius:"50%", background:"#0052FF", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"10px", fontWeight:900, color:"white", flexShrink:0 }}>
+                    {getInitials(user.name)}
+                  </div>
+                  <span style={{ fontSize:"13px", fontWeight:600, color:"#111827" }}>{user.name.split(" ")[0]}</span>
+                </Link>
+                <button onClick={handleLogout}
+                  style={{ padding:"8px 20px", borderRadius:"999px", border:"1px solid #e5e7eb", background:"white", fontSize:"14px", fontWeight:600, color:"#374151", cursor:"pointer" }}
+                  onMouseEnter={e => { e.currentTarget.style.background="#fef2f2"; e.currentTarget.style.color="#dc2626"; e.currentTarget.style.borderColor="#fecaca"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background="white"; e.currentTarget.style.color="#374151"; e.currentTarget.style.borderColor="#e5e7eb"; }}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              // Logged out — show Sign in + Sign up
+              <>
+                <Link to="/signin"
+                  style={{ padding:"8px 20px", borderRadius:"999px", border:"1px solid #e5e7eb", background:"white", fontSize:"14px", fontWeight:600, color:"#111827", textDecoration:"none" }}
+                  onMouseEnter={e => e.currentTarget.style.background="#f3f4f6"}
+                  onMouseLeave={e => e.currentTarget.style.background="white"}>
+                  Sign in
+                </Link>
+                <Link to="/signup"
+                  style={{ padding:"8px 20px", borderRadius:"999px", background:"#0052FF", fontSize:"14px", fontWeight:700, color:"white", textDecoration:"none" }}
+                  onMouseEnter={e => e.currentTarget.style.background="#003ed4"}
+                  onMouseLeave={e => e.currentTarget.style.background="#0052FF"}>
+                  Sign up
+                </Link>
+              </>
+            )
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -394,14 +424,29 @@ export default function Navbar() {
             </div>
           ))}
           <div style={{ display:"flex", gap:"8px", marginTop:"16px", paddingTop:"16px", borderTop:"1px solid #e5e7eb" }}>
-            <Link to="/signin" onClick={() => setMobileOpen(false)}
-              style={{ flex:1, textAlign:"center", padding:"10px", borderRadius:"8px", border:"1px solid #e5e7eb", fontSize:"14px", fontWeight:600, color:"#111827", textDecoration:"none" }}>
-              Sign in
-            </Link>
-            <Link to="/signup" onClick={() => setMobileOpen(false)}
-              style={{ flex:1, textAlign:"center", padding:"10px", borderRadius:"8px", background:"#0052FF", fontSize:"14px", fontWeight:700, color:"white", textDecoration:"none" }}>
-              Sign up
-            </Link>
+            {user ? (
+              <>
+                <Link to="/profile" onClick={() => setMobileOpen(false)}
+                  style={{ flex:1, textAlign:"center", padding:"10px", borderRadius:"8px", border:"1px solid #e5e7eb", fontSize:"14px", fontWeight:600, color:"#111827", textDecoration:"none" }}>
+                  Profile
+                </Link>
+                <button onClick={handleLogout}
+                  style={{ flex:1, textAlign:"center", padding:"10px", borderRadius:"8px", background:"#fef2f2", border:"1px solid #fecaca", fontSize:"14px", fontWeight:600, color:"#dc2626", cursor:"pointer" }}>
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/signin" onClick={() => setMobileOpen(false)}
+                  style={{ flex:1, textAlign:"center", padding:"10px", borderRadius:"8px", border:"1px solid #e5e7eb", fontSize:"14px", fontWeight:600, color:"#111827", textDecoration:"none" }}>
+                  Sign in
+                </Link>
+                <Link to="/signup" onClick={() => setMobileOpen(false)}
+                  style={{ flex:1, textAlign:"center", padding:"10px", borderRadius:"8px", background:"#0052FF", fontSize:"14px", fontWeight:700, color:"white", textDecoration:"none" }}>
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
